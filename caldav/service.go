@@ -25,19 +25,54 @@ func NewCalDAVService(serverUrl string, client *http.Client) (*CalDAVService) {
 }
 
 func (c *CalDAVService) NewUserPrincipalRequest() (*http.Request, error) {
-    body := `
-    <?xml version="1.0" encoding="utf-8" ?>
+    body := `<?xml version="1.0" encoding="utf-8" ?>
     <d:propfind xmlns:d="DAV:">
         <d:prop>
             <d:current-user-principal />
         </d:prop>
-    </d:propfind> 
-    `
-    req, err := basicHttpRequest(PROPFIND, c.serverUrl, "", body)
+    </d:propfind>`
+    req, err := basicHttpRequest(PROPFIND, c.serverUrl, "/", body)
     if err != nil {
         return nil, err
     }
     req.Header.Set(DEPTH, "0")
+
+    return req, nil
+}
+
+func (c *CalDAVService) NewCalendarHome() (*http.Request, error) {
+    body := `<?xml version="1.0" encoding="utf-8" ?>
+    <d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:prop>
+            <c:calendar-home-set />
+        </d:prop>
+    </d:propfind>` 
+    //should be called on result href of NewUserPrincipalRequest
+    req, err := basicHttpRequest(PROPFIND, c.serverUrl, "/user", body)
+    if err != nil {
+        return nil, err
+    }
+    req.Header.Set(DEPTH, "0")
+
+    return req, nil
+}
+
+func (c *CalDAVService) NewGetAllCalendars() (*http.Request, error) {
+    body := `<?xml version="1.0" encoding="utf-8" ?>
+    <d:propfind xmlns:d="DAV:" xmlns:cs="http://calendarserver.org/ns/" xmlns:c="urn:ietf:params:xml:ns:caldav">
+    <d:prop>
+        <d:resourcetype />
+        <d:displayname />
+        <cs:getctag />
+        <c:supported-calendar-component-set />
+    </d:prop>
+    </d:propfind>`
+    //should be called on result href of NewCalendarHome
+    req, err := basicHttpRequest(PROPFIND, c.serverUrl, "/", body)
+    if err != nil {
+        return nil, err
+    }
+    req.Header.Set(DEPTH, "1")
 
     return req, nil
 }

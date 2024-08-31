@@ -5,8 +5,6 @@ import (
 	"log"
 	"net/url"
 	"os"
-	"strings"
-	"time"
 
 	"github.com/docech/agenda/caldav"
 	"github.com/joho/godotenv"
@@ -25,6 +23,7 @@ func main() {
 	clientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
 	calendarId := os.Getenv("GOOGLE_CALENDAR_ID")
 	calDAVServerUrl := fmt.Sprintf("https://apidata.googleusercontent.com/caldav/v2/%s", url.QueryEscape(calendarId))
+	// calDAVServerUrl := "https://apidata.googleusercontent.com/caldav/v2"
 
 	config := &oauth2.Config{
 		ClientID:     clientID,
@@ -57,40 +56,14 @@ func main() {
 // 	calendarEvents = strings.ReplaceAll(calendarEvents, "START_DATE", now.Format("20060102T150405Z"))
 // 	calendarEvents = strings.ReplaceAll(calendarEvents, "END_DATE", nowPlus7Days.Format("20060102T150405Z"))
 
-// 	listCalendars := `<?xml version="1.0" encoding="UTF-8" ?>
-// <D:propfind xmlns:D="DAV:">
-//   <D:prop>
-//     <D:displayname />
-//     <C:calendar-home-set xmlns:C="urn:ietf:params:xml:ns:caldav" />
-//   </D:prop>
-// </D:propfind>`
-
-//     discovery := `<d:propfind xmlns:d="DAV:" xmlns:cs="http://calendarserver.org/ns/" xmlns:c="urn:ietf:params:xml:ns:caldav">
-//   <d:prop>
-//      <d:resourcetype />
-//      <d:displayname />
-//      <cs:getctag />
-//      <c:supported-calendar-component-set />
-//   </d:prop>
-// </d:propfind>`
-//
-//     body := discovery
-//     method := "DISCOVERY"
-//
-//     var path string
-//     if method == "REPORT" {
-//         path =  "/events"
-//     } else if method == "PROPFIND"{
-//         path = "/user"
-//     } else {
-//         method = "PROPFIND"
-//         path = "/"
-//     }
-        
-    req, err := service.NewUserPrincipalRequest()
+    // req, err := service.NewUserPrincipalRequest()
+    // req, err := service.NewCalendarHome()
+    req, err := service.NewGetAllCalendars()
     if err != nil {
         log.Fatalf("Could not create request: %v", err)
     }
+
+    fmt.Printf("Request: %v\n", req)
 
     response, err := service.Do(req)
 	if err != nil {
