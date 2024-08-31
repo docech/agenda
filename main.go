@@ -1,12 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
-	"net/url"
+
 	"os"
 
-	"github.com/docech/agenda/caldav"
+	"github.com/emersion/go-webdav/caldav"
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -21,9 +22,7 @@ func main() {
 
 	clientID := os.Getenv("GOOGLE_CLIENT_ID")
 	clientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
-	calendarId := os.Getenv("GOOGLE_CALENDAR_ID")
-	calDAVServerUrl := fmt.Sprintf("https://apidata.googleusercontent.com/caldav/v2/%s", url.QueryEscape(calendarId))
-	// calDAVServerUrl := "https://apidata.googleusercontent.com/caldav/v2"
+	calDAVServerUrl := "https://apidata.googleusercontent.com/caldav/v2"
 
 	config := &oauth2.Config{
 		ClientID:     clientID,
@@ -33,43 +32,32 @@ func main() {
 		Endpoint:     google.Endpoint,
 	}
 
-	service := caldav.NewOAuth2CalDAVService(calDAVServerUrl, config)
-
-// 	now := time.Now()
-// 	nowPlus7Days := now.AddDate(0, 0, 7)
-//
-//     //Gets calendar events, REPORT, has to be sent to calendar endpoint
-// 	calendarEvents := `<?xml version="1.0" encoding="utf-8" ?>
-// <c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
-//     <d:prop>
-//         <d:getetag />
-//         <c:calendar-data />
-//     </d:prop>
-//     <c:filter>
-//         <c:comp-filter name="VCALENDAR">
-//             <c:comp-filter name="VEVENT">
-//                 <c:time-range start="START_DATE" end="END_DATE"/>
-//             </c:comp-filter>
-//         </c:comp-filter>
-//     </c:filter>
-// </c:calendar-query>`
-// 	calendarEvents = strings.ReplaceAll(calendarEvents, "START_DATE", now.Format("20060102T150405Z"))
-// 	calendarEvents = strings.ReplaceAll(calendarEvents, "END_DATE", nowPlus7Days.Format("20060102T150405Z"))
-
-    // req, err := service.NewUserPrincipalRequest()
-    // req, err := service.NewCalendarHome()
-    req, err := service.NewGetAllCalendars()
+    ctx := context.Background()
+    client, err := caldav.NewClient(NewOAuth2HTTPClient(config), calDAVServerUrl)
     if err != nil {
-        log.Fatalf("Could not create request: %v", err)
+        log.Fatalf("Could not create client: %v", err)
     }
 
-    fmt.Printf("Request: %v\n", req)
+    principal, err := client.FindCurrentUserPrincipal(ctx)
+    if err != nil {
+        log.Fatalf("Could not get current user principal: %v", err)
+    }
+    fmt.Printf("Principal: %s\n", principal)
 
-    response, err := service.Do(req)
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return
-	}
+    calHomeSet, err := client.FindCalendarHomeSet(ctx, principal)
+    if err != nil {
+        log.Fatalf("Could not get calendar home set: %v", err)
+    }
+    fmt.Printf("Calendar home set: %v\n", calHomeSet)
 
-	fmt.Printf("Response: %s\n", string(response))
+    calendars, err := client.FindCalendars(ctx, calHomeSet)
+    if err != nil {
+        log.Fatalf("Could not get calendars: %v", err)
+    }
+
+    for _, calendar := range calendars {
+        fmt.Printf("Calendar: %v\n", calendar)
+    }
+
+    fmt.Printf("Principal: %s\n", principal)
 }

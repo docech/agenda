@@ -1,4 +1,4 @@
-package caldav
+package main
 
 import (
 	"context"
@@ -10,20 +10,19 @@ import (
 	"os/exec"
 	"runtime"
 
+	"github.com/emersion/go-webdav"
 	"golang.org/x/oauth2"
 )
 
 var tokenCacheFile = "credentials.json"
 
-func NewOAuth2CalDAVService(serverUrl string, config *oauth2.Config) *CalDAVService {
+func NewOAuth2HTTPClient(config *oauth2.Config) webdav.HTTPClient {
     token, err := retriveToken(tokenCacheFile, config)
     if err != nil {
-        log.Fatalf("Cannot create OAuth2 CalDAVService because of: %v", err)
+        log.Fatalf("Cannot create OAuth2 HTTPClient because of: %v", err)
     }
 
-	client := config.Client(context.Background(), token)
-
-	return NewCalDAVService(serverUrl, client)
+	return config.Client(context.Background(), token)
 }
 
 func retriveToken(cacheFile string, config *oauth2.Config) (*oauth2.Token, error) {
