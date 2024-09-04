@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/url"
+	// "net/url"
 	"os"
 	"time"
 
@@ -13,8 +13,8 @@ import (
 	"github.com/emersion/go-ical"
 	"github.com/emersion/go-webdav/caldav"
 	"github.com/joho/godotenv"
-	// "golang.org/x/oauth2"
-	// "golang.org/x/oauth2/google"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 )
 
 var docStyle = lipgloss.NewStyle().Margin(1, 2)
@@ -120,39 +120,39 @@ func loadEventsFromCalDAVServer() tea.Msg {
 		return ErrorMsg{err: fmt.Errorf("Error loading .env file. Make sure it exists. %v", err)}
 	}
 
-	// clientID := os.Getenv("GOOGLE_CLIENT_ID")
-	// clientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
-	// calendarId := os.Getenv("GOOGLE_CALENDAR_ID")
-	// calDAVServerUrl := "https://apidata.googleusercontent.com/caldav/v2"
-	//
-	// baseClient := NewOAuth2HTTPClient(&oauth2.Config{
-	// 	ClientID:     clientID,
-	// 	ClientSecret: clientSecret,
-	// 	RedirectURL:  "http://localhost:8080/callback",
-	// 	Scopes:       []string{"https://www.googleapis.com/auth/calendar"},
-	// 	Endpoint:     google.Endpoint,
-	// })
+	clientID := os.Getenv("GOOGLE_CLIENT_ID")
+	clientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
+	calendarId := os.Getenv("GOOGLE_CALENDAR_ID")
+	calDAVServerUrl := "https://apidata.googleusercontent.com/caldav/v2"
 
-    ibbUsername := os.Getenv("IBB_USERNAME")
-    ibbPass := os.Getenv("IBB_PASSWORD")
-    proxyUrlStr := os.Getenv("PROXY_URL")
-    calendarId := os.Getenv("IBB_CALENDAR_ID")
-    calDAVServerUrl := "https://ms.billboard.cz/dav.php"
+	baseClient := NewOAuth2HTTPClient(&oauth2.Config{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		RedirectURL:  "http://localhost:8080/callback",
+		Scopes:       []string{"https://www.googleapis.com/auth/calendar"},
+		Endpoint:     google.Endpoint,
+	})
 
-    var proxyUrl *url.URL
-    if proxyUrlStr != "" {
-        proxyUrl, err = url.Parse(proxyUrlStr)
-        if err != nil {
-            return ErrorMsg{err: err}
-        }
-    }
-
-    config := DigestAuthClientConfig {
-        Username: ibbUsername,
-        Password: ibbPass,
-        ProxyUrl: proxyUrl,
-    }
-    baseClient := NewDigestAuthClient(config)
+    // ibbUsername := os.Getenv("IBB_USERNAME")
+    // ibbPass := os.Getenv("IBB_PASSWORD")
+    // proxyUrlStr := os.Getenv("PROXY_URL")
+    // calendarId := os.Getenv("IBB_CALENDAR_ID")
+    // calDAVServerUrl := "https://ms.billboard.cz/dav.php"
+    //
+    // var proxyUrl *url.URL
+    // if proxyUrlStr != "" {
+    //     proxyUrl, err = url.Parse(proxyUrlStr)
+    //     if err != nil {
+    //         return ErrorMsg{err: err}
+    //     }
+    // }
+    //
+    // config := DigestAuthClientConfig {
+    //     Username: ibbUsername,
+    //     Password: ibbPass,
+    //     ProxyUrl: proxyUrl,
+    // }
+    // baseClient := NewDigestAuthClient(config)
 
 	ctx := context.Background()
 	client, err := caldav.NewClient(baseClient, calDAVServerUrl)
@@ -187,7 +187,7 @@ func loadEventsFromCalDAVServer() tea.Msg {
 	}
 
 	now := time.Now()
-	weekFromNow := now.AddDate(0, 0, 7)
+	future := now.AddDate(0, 1, 0)
 	query := &caldav.CalendarQuery{
 		CompRequest: caldav.CalendarCompRequest{
 			Props: []string{"getetag", "calendar-data"},
@@ -198,7 +198,7 @@ func loadEventsFromCalDAVServer() tea.Msg {
 				{
 					Name:  "VEVENT",
 					Start: now.AddDate(0, 0, -1),
-					End:   weekFromNow,
+					End:   future,
 				},
 			},
 		},
